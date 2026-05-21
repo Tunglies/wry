@@ -137,7 +137,7 @@ pub(crate) struct InnerWebView {
   ns_view: Retained<NSView>,
   #[allow(dead_code)]
   is_child: bool,
-  pending_scripts: Arc<Mutex<Option<Vec<String>>>>,
+  pending_scripts: Rc<RefCell<Option<Vec<String>>>>,
   // Note that if following functions signatures are changed in the future,
   // all functions pointer declarations in objc callbacks below all need to get updated.
   ipc_handler_delegate: Option<Retained<WryWebViewDelegate>>,
@@ -566,7 +566,7 @@ impl InnerWebView {
           None
         };
 
-      let pending_scripts = Arc::new(Mutex::new(Some(Vec::new())));
+      let pending_scripts = Rc::new(RefCell::new(Some(Vec::new())));
       let has_download_handler = attributes.download_started_handler.is_some();
       // Download handler
       let download_delegate = if attributes.download_started_handler.is_some()
@@ -718,7 +718,7 @@ r#"Object.defineProperty(window, 'ipc', {
   }
 
   pub fn eval(&self, js: &str, callback: Option<impl Fn(String) + Send + 'static>) -> Result<()> {
-    if let Some(scripts) = &mut *self.pending_scripts.lock().unwrap() {
+    if let Some(scripts) = &mut *self.pending_scripts.borrow_mut() {
       scripts.push(js.into());
     } else {
       // Safety: objc runtime calls are unsafe
