@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-use std::{collections::HashMap, sync::Mutex};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[cfg(target_os = "macos")]
 use objc2::runtime::ProtocolObject;
@@ -31,7 +31,7 @@ pub struct WryWebViewIvars {
   pub(crate) accept_first_mouse: objc2::runtime::Bool,
   #[cfg(target_os = "ios")]
   pub(crate) input_accessory_view_builder: Option<Box<crate::InputAccessoryViewBuilder>>,
-  pub(crate) custom_protocol_task_ids: Mutex<HashMap<usize, Retained<NSUUID>>>,
+  pub(crate) custom_protocol_task_ids: Rc<RefCell<HashMap<usize, Retained<NSUUID>>>>,
 }
 
 define_class!(
@@ -128,8 +128,7 @@ impl WryWebView {
     self
       .ivars()
       .custom_protocol_task_ids
-      .lock()
-      .unwrap()
+      .borrow_mut()
       .insert(task_id, task_uuid.clone());
     task_uuid
   }
@@ -137,16 +136,14 @@ impl WryWebView {
     self
       .ivars()
       .custom_protocol_task_ids
-      .lock()
-      .unwrap()
+      .borrow_mut()
       .remove(&task_id);
   }
   pub(crate) fn get_custom_task_uuid(&self, task_id: usize) -> Option<Retained<NSUUID>> {
     self
       .ivars()
       .custom_protocol_task_ids
-      .lock()
-      .unwrap()
+      .borrow_mut()
       .get(&task_id)
       .cloned()
   }

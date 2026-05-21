@@ -1493,7 +1493,7 @@ impl<'a> WebViewBuilder<'a> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-pub(crate) struct  PlatformSpecificWebViewAttributes {
+pub(crate) struct PlatformSpecificWebViewAttributes {
   data_store_identifier: Option<[u8; 16]>,
   traffic_light_inset: Option<dpi::Position>,
   allow_link_preview: bool,

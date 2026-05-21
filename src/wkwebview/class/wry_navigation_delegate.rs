@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-use std::{cell::RefCell, rc::Rc}; 
+use std::{cell::RefCell, rc::Rc};
 
 use objc2::{define_class, msg_send, rc::Retained, runtime::NSObject, MainThreadOnly};
 use objc2_foundation::{MainThreadMarker, NSObjectProtocol};
