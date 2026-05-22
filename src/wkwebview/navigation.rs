@@ -26,12 +26,11 @@ pub(crate) fn did_commit_navigation(
     }
 
     // Inject scripts
-    let mut pending_scripts = this.ivars().pending_scripts.borrow_mut();
-    if let Some(scripts) = &*pending_scripts {
+    let scripts_to_execute = { this.ivars().pending_scripts.borrow_mut().take() };
+    if let Some(scripts) = scripts_to_execute {
       for script in scripts {
-        webview.evaluateJavaScript_completionHandler(&NSString::from_str(script), None);
+        webview.evaluateJavaScript_completionHandler(&NSString::from_str(&script), None);
       }
-      *pending_scripts = None;
     }
   }
 }
