@@ -125,26 +125,20 @@ define_class!(
 impl WryWebView {
   pub(crate) fn add_custom_task_key(&self, task_id: usize) -> Retained<NSUUID> {
     let task_uuid = NSUUID::new();
-    self
-      .ivars()
-      .custom_protocol_task_ids
-      .borrow_mut()
-      .insert(task_id, task_uuid.clone());
+    {
+      let mut ids = self.ivars().custom_protocol_task_ids.borrow_mut();
+      ids.insert(task_id, task_uuid.clone());
+    }
     task_uuid
   }
   pub(crate) fn remove_custom_task_key(&self, task_id: usize) {
-    self
-      .ivars()
-      .custom_protocol_task_ids
-      .borrow_mut()
-      .remove(&task_id);
+    {
+      let mut ids = self.ivars().custom_protocol_task_ids.borrow_mut();
+      ids.remove(&task_id);
+    }
   }
   pub(crate) fn get_custom_task_uuid(&self, task_id: usize) -> Option<Retained<NSUUID>> {
-    self
-      .ivars()
-      .custom_protocol_task_ids
-      .borrow_mut()
-      .get(&task_id)
-      .cloned()
+    let ids = self.ivars().custom_protocol_task_ids.borrow();
+    ids.get(&task_id).cloned()
   }
 }
