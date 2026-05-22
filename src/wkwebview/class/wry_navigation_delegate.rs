@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::Cell, rc::Rc};
 
 use objc2::{define_class, msg_send, rc::Retained, runtime::NSObject, MainThreadOnly};
 use objc2_foundation::{MainThreadMarker, NSObjectProtocol};
@@ -31,7 +31,7 @@ use crate::{
 use super::wry_download_delegate::WryDownloadDelegate;
 
 pub struct WryNavigationDelegateIvars {
-  pub pending_scripts: Rc<RefCell<Option<Vec<String>>>>,
+  pub pending_scripts: Rc<Cell<Option<Vec<String>>>>,
   pub has_download_handler: bool,
   pub navigation_policy_function: Box<dyn Fn(String) -> bool>,
   pub download_delegate: Option<Retained<WryDownloadDelegate>>,
@@ -109,7 +109,7 @@ impl WryNavigationDelegate {
   #[allow(clippy::too_many_arguments)]
   pub fn new(
     webview: Retained<WryWebView>,
-    pending_scripts: Rc<RefCell<Option<Vec<String>>>>,
+    pending_scripts: Rc<Cell<Option<Vec<String>>>>,
     has_download_handler: bool,
     navigation_handler: Option<Box<dyn Fn(String) -> bool>>,
     download_delegate: Option<Retained<WryDownloadDelegate>>,

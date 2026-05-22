@@ -75,7 +75,7 @@ use objc2_web_kit::{
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 
 use std::{
-  cell::RefCell,
+  cell::{Cell, RefCell},
   collections::HashMap,
   ffi::CString,
   net::Ipv4Addr,
@@ -137,7 +137,7 @@ pub(crate) struct InnerWebView {
   ns_view: Retained<NSView>,
   #[allow(dead_code)]
   is_child: bool,
-  pending_scripts: Rc<RefCell<Option<Vec<String>>>>,
+  pending_scripts: Rc<Cell<Option<Vec<String>>>>,
   // Note that if following functions signatures are changed in the future,
   // all functions pointer declarations in objc callbacks below all need to get updated.
   ipc_handler_delegate: Option<Retained<WryWebViewDelegate>>,
@@ -566,7 +566,7 @@ impl InnerWebView {
           None
         };
 
-      let pending_scripts = Rc::new(RefCell::new(Some(Vec::new())));
+      let pending_scripts = Rc::new(std::cell::Cell::new(Some(Vec::new())));
       let has_download_handler = attributes.download_started_handler.is_some();
       // Download handler
       let download_delegate = if attributes.download_started_handler.is_some()
@@ -584,7 +584,7 @@ impl InnerWebView {
 
       let navigation_policy_delegate = WryNavigationDelegate::new(
         webview.clone(),
-        pending_scripts.clone(),
+        Rc::clone(&pending_scripts),
         has_download_handler,
         attributes.navigation_handler,
         download_delegate.clone(),
@@ -622,7 +622,7 @@ impl InnerWebView {
         manager,
         ns_view: ns_view.retain(),
         data_store,
-        pending_scripts,
+        pending_scripts: Rc::clone(&pending_scripts),
         ipc_handler_delegate,
         document_title_changed_observer,
         navigation_policy_delegate,
@@ -718,9 +718,12 @@ r#"Object.defineProperty(window, 'ipc', {
   }
 
   pub fn eval(&self, js: &str, callback: Option<impl Fn(String) + Send + 'static>) -> Result<()> {
-    if let Some(scripts) = &mut *self.pending_scripts.borrow_mut() {
+    let mut scripts_opt = self.pending_scripts.take();
+    if let Some(scripts) = &mut scripts_opt {
       scripts.push(js.into());
+      self.pending_scripts.set(scripts_opt);
     } else {
+      self.pending_scripts.set(None);
       // Safety: objc runtime calls are unsafe
       unsafe {
         #[cfg(feature = "tracing")]
