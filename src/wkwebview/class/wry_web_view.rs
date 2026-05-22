@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::Cell, collections::HashMap};
 
 #[cfg(target_os = "macos")]
 use objc2::runtime::ProtocolObject;
@@ -31,7 +31,7 @@ pub struct WryWebViewIvars {
   pub(crate) accept_first_mouse: objc2::runtime::Bool,
   #[cfg(target_os = "ios")]
   pub(crate) input_accessory_view_builder: Option<Box<crate::InputAccessoryViewBuilder>>,
-  pub(crate) custom_protocol_task_ids: Rc<RefCell<HashMap<usize, Retained<NSUUID>>>>,
+  pub(crate) custom_protocol_task_ids: Cell<HashMap<usize, Retained<NSUUID>>>,
 }
 
 define_class!(
@@ -125,20 +125,20 @@ define_class!(
 impl WryWebView {
   pub(crate) fn add_custom_task_key(&self, task_id: usize) -> Retained<NSUUID> {
     let task_uuid = NSUUID::new();
-    {
-      let mut ids = self.ivars().custom_protocol_task_ids.borrow_mut();
-      ids.insert(task_id, task_uuid.clone());
-    }
+    let mut ids = self.ivars().custom_protocol_task_ids.take();
+    ids.insert(task_id, task_uuid.clone());
+    self.ivars().custom_protocol_task_ids.set(ids);
     task_uuid
   }
   pub(crate) fn remove_custom_task_key(&self, task_id: usize) {
-    {
-      let mut ids = self.ivars().custom_protocol_task_ids.borrow_mut();
-      ids.remove(&task_id);
-    }
+    let mut ids = self.ivars().custom_protocol_task_ids.take();
+    ids.remove(&task_id);
+    self.ivars().custom_protocol_task_ids.set(ids);
   }
   pub(crate) fn get_custom_task_uuid(&self, task_id: usize) -> Option<Retained<NSUUID>> {
-    let ids = self.ivars().custom_protocol_task_ids.borrow();
-    ids.get(&task_id).cloned()
+    let ids = self.ivars().custom_protocol_task_ids.take();
+    let res = ids.get(&task_id).cloned();
+    self.ivars().custom_protocol_task_ids.set(ids);
+    res
   }
 }
